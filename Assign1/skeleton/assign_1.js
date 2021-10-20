@@ -10,6 +10,7 @@ var program;
 var numVtx;
 var numFace;
 
+// loading file
 var points  = [];
 var temp_indicies = [];
 var indicies = [];
@@ -17,14 +18,19 @@ var face_normal = [];
 var vertex_normals = [];
 var adj_list = {};
 
+// for rendering
 var render_mode = "triangles";
 var projection_type = "perspective";
 var perspective_matrix = perspective(15, 1, -0.5, 0.5);
 var orthogonal_matrix = ortho(-0.5, 0.5, -0.5, 0.5, -0.5, 1000);
+var eye_min_z = 0.5;
 var eye_ = vec3(0.0, 0.0, 2.0);
 var at_ = vec3(0.0, 0.0, -1.0);
 var up_ = vec3(0.0, 1.0, 0.0);
-var moving = true
+
+// for user interaction
+var mouse_moving = true
+var start_x; var start_y;
 
 var zoom = function(wh_event){
 	var dir = vec3(0.0, 0.0, 0.0);
@@ -42,21 +48,56 @@ var zoom = function(wh_event){
 }
 
 var mouse_down = function(evt){
+	mouse_moving = true;
+	start_x = evt.pageX; start_y = evt.pageY;
+	evt.preventDefault();
+}
 
+var mouse_move = function(evt){
+	if (!mouse_moving){
+		return;
+	}
 
 	// left mouse clicked (rotation)
-	if (evt.which == 1){
+	if (evt.which == 1) {
 		console.log("left");
+		console.log(evt.pageX, evt.pageY);
 	}
 	// middle mouse clicked (pan)
-	else if(evt.which == 2){
-		console.log("middle");
+	else if (evt.which == 2) {
+		var dX = (evt.pageX - start_x) * 2 * Math.PI / canvas.width;
+		var dY = (evt.pageY - start_y) * 2 * Math.PI / canvas.height;
+
+		if (at_[0] + dX <= 5 && at_[0] + dX >= -5)   //change camera angle
+			at_[0] += dX;
+		if (at_[1] - dY <= 5 && at_[1] - dY >= -5)
+			at_[1] -= dY;
+		start_x = evt.pageX, start_y = evt.pageY;
+		evt.preventDefault();
+		render();
+
 	}
 	// right mouse clicked (zoom)
-	else if (evt.which == 3){
-		console.log("right");
+	else if (evt.which == 3) {
+		var dir = vec3(0.0, 0.0, 0.0);
+		for (var i = 0; i < 3; i++)
+			dir[i] = eye_[i] - at_[i];
+		if (evt.pageY >= start_y) {
+			for (var i = 0; i < 3; i++)
+				eye_[i] -= 0.005 * dir[i];
+		}
+		else {
+			for (var i = 0; i < 3; i++)
+				eye_[i] += 0.005 * dir[i];
+		}
+		render();
 	}
 
+
+}
+
+var mouse_up = function(evt){
+	mouse_moving = false;
 }
 
 
@@ -65,8 +106,9 @@ window.onload = function init()
     canvas = document.getElementById( "gl-canvas" );
 	canvas.oncontextmenu = () => false;
 
-	canvas.addEventListener("wheel", zoom, false);
-	canvas.addEventListener("mousedown", pan, false);
+	canvas.addEventListener("mousedown", mouse_down, false);
+	canvas.addEventListener("mousemove", mouse_move, false);
+	canvas.addEventListener("mouseup", mouse_up, false);
 
     gl = WebGLUtils.setupWebGL( canvas );
     if ( !gl ) { alert( "WebGL isn't available" ); }
@@ -263,37 +305,36 @@ function set_light_source(){
 	// get location
 	var light_pos_loc1 = gl.getUniformLocation(program, "lightPosition1");
 	var light_pos_loc2 = gl.getUniformLocation(program, "lightPosition2");
-	var ap_loc1 = gl.getUniformLocation(program, "ambientProduct1");
-	var ap_loc2 = gl.getUniformLocation(program, "ambientProduct2");
-	var dp_loc = gl.getUniformLocation(program, "diffuseProduct");
+	var ap_loc = gl.getUniformLocation(program, "ambientProduct");
+	var dp_loc1 = gl.getUniformLocation(program, "diffuseProduct1");
+	var dp_loc2 = gl.getUniformLocation(program, "diffuseProduct2");
 	var sp_loc = gl.getUniformLocation(program, "specularProduct");
 	var shine_loc = gl.getUniformLocation(program, "shininess");
 
 	// phong lighting parameters
 	var lightPosition1 = vec4(5.0, 0.5, 1.0, 0.0);
 	var lightPosition2 = vec4(-5.0, 0.5, 1.0, 0.0);
-	var lightAmbient1 = vec4(0.2, 0.2, 0.2, 1.0);
-	var lightAmbient2 = vec4(0.2, 1.0, 0.2, 1.0);
-	var materialAmbient1 = vec4(1.0, 1.0, 1.0, 1.0);
-	var materialAmbient2 = vec4(1.0, 1.0, 1.0, 1.0);
+	var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
+	var materialAmbient = vec4(1.0, 0.0, 1.0, 1.0);
 
 	var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
 	var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
-	var materialDiffuse = vec4(1.0, 0.8, 0.0, 1.0);
+	var materialDiffuse1 = vec4(1.0, 0.1, 0.0, 1.0); // what determines color
+	var materialDiffuse2 = vec4(0.1, 1.0, 0.0, 1.0);
 	var materialSpecular = vec4(1.0, 0.8, 0.0, 1.0);
 	var materialShininess = 100.0;
 
-	var ambientProduct1 = mult(lightAmbient1, materialAmbient1);
-	var ambientProduct2 = mult(lightAmbient2, materialAmbient2);
-	var diffuseProduct = mult(lightDiffuse, materialDiffuse);
+	var ambientProduct = mult(lightAmbient, materialAmbient);
+	var diffuseProduct1 = mult(lightDiffuse, materialDiffuse1);
+	var diffuseProduct2 = mult(lightDiffuse, materialDiffuse2);
 	var specularProduct = mult(lightSpecular, materialSpecular);
 
 	// set bytes
 	gl.uniform4fv(light_pos_loc1, flatten(lightPosition1));
 	gl.uniform4fv(light_pos_loc2, flatten(lightPosition2));
-	gl.uniform4fv(ap_loc1, flatten(ambientProduct1));
-	gl.uniform4fv(ap_loc2, flatten(ambientProduct2));
-	gl.uniform4fv(dp_loc, flatten(diffuseProduct));
+	gl.uniform4fv(ap_loc, flatten(ambientProduct));
+	gl.uniform4fv(dp_loc1, flatten(diffuseProduct1));
+	gl.uniform4fv(dp_loc2, flatten(diffuseProduct2));
 	gl.uniform4fv(sp_loc, flatten(specularProduct));
 	gl.uniform1f(shine_loc, materialShininess);
 
@@ -332,7 +373,7 @@ function render()
 		gl.drawElements(gl.LINES, indicies.length, gl.UNSIGNED_INT, 0);
 	}
 
-	console.log("render complete");
+	// console.log("render complete");
 }
 
 
