@@ -2,7 +2,6 @@
 <html>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <script id="vertex-shader" type="x-shader/x-vertex">
-
 attribute vec3 vPosition;
 attribute vec2 texCoord;
 uniform mat4 modelViewMatrix;
@@ -20,18 +19,19 @@ void main()
 precision mediump float;
 
 varying vec2 interpolated_textCoord;
-uniform sampler2D texture;
+uniform sampler2D cube_texture;
 
 void main()
 {
-     gl_FragColor = texture2D(texture, interpolated_textCoord);
+     gl_FragColor = texture2D(cube_texture, interpolated_textCoord);
 }
+
 </script>
 
-<script type="text/javascript" src="Common/webgl-utils.js"></script>
-<script type="text/javascript" src="Common/initShaders.js"></script>
-<script type="text/javascript" src="Common/MV.js"></script>
-<script type="text/javascript" src="Sphere.js"></script>
+<script type="text/javascript" src="../Common/webgl-utils.js"></script>
+<script type="text/javascript" src="../Common/initShaders.js"></script>
+<script type="text/javascript" src="../Common/MV.js"></script>
+<script type="text/javascript" src="../Common/Sphere.js"></script>
 <script type="text/javascript" src="assign_2.js"></script>
 
 <body>
@@ -43,3 +43,5 @@ Oops ... your browser doesn't support the HTML5 canvas element
 
 </body>
 </html>
+
+

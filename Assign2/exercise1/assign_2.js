@@ -2,10 +2,9 @@
 //   2021 Fall COSE436 interactive Visualization
 //   Instructor: Won-Ki Jeong (wkjeong@korea.ac.kr)
 //
-//   Assignment 2 Texture Mapping
+//   Assignment 2 Texture Mapping - exercise 1
 //
 
-var exercise_num = 2;
 var canvas;
 var gl;
 var program;
@@ -21,20 +20,6 @@ var indicies = [];
 var face_normal = [];
 var vertex_normals = [];
 var adj_list = {};
-
-var sphere;
-
-// Cubemap raw texture image
-var texSize = 16;
-
-var image1 = new Uint8Array(4*texSize*texSize);
-var image2 = new Uint8Array(4*texSize*texSize);
-var image3 = new Uint8Array(4*texSize*texSize);
-var image4 = new Uint8Array(4*texSize*texSize);
-var image5 = new Uint8Array(4*texSize*texSize);
-var image6 = new Uint8Array(4*texSize*texSize);
-
-var cubeMap;
 
 window.onload = function init(){
 	canvas = document.getElementById("gl-canvas");
@@ -52,29 +37,8 @@ window.onload = function init(){
 	//  Load shaders and initialize buffers
 	//
 	program = initShaders(gl, "vertex-shader", "fragment-shader");
-	console.log("good till here")
 	gl.useProgram(program);
 	document.getElementById('inputfile').addEventListener('change', off_reader);
-
-	/*
-	// Create CubeMap Texture
-	configureCubeMap();
-
-	gl.activeTexture(gl.TEXTURE0);
-	gl.uniform1i(gl.getUniformLocation(program, "texMap"), 0);
-
-	// Use Sphere.js (external library)
-	sphere = new Sphere(gl, 0.5, 36, 36, true);
-
-	gl.bindBuffer(gl.ARRAY_BUFFER, sphere.vboVertex);
-
-	var vPosition = gl.getAttribLocation(program, "vPosition");
-	gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, sphere.stride, 0);
-	gl.enableVertexAttribArray(vPosition);
-
-
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sphere.vboIndex);
-	*/
 
 };
 
@@ -183,9 +147,7 @@ function parser(text) {
 		vertex_normals.push(v_normal[2] / mag);
 	}
 
-	if(exercise_num == 1){
-		exercise1();
-	}
+	exercise1();
 
 }
 
@@ -208,7 +170,7 @@ function set_cube_uniform_matrix(){
 
 function set_cube_buffers(){
 
-	// Vertex Position
+	// vertex
 	var vBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
@@ -217,7 +179,7 @@ function set_cube_buffers(){
 	gl.vertexAttribPointer(vPositionHandle, 3, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(vPositionHandle);
 
-	// Vertex Index
+	// index
 	var indexBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indicies), gl.STATIC_DRAW);
@@ -225,25 +187,15 @@ function set_cube_buffers(){
 }
 
 function configureTexture(image){
-	texture = gl.createTexture();
-	gl.bindTexture(gl.TEXTURE_2D, texture);
+	var cube_texture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, cube_texture);
 	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
-
-	/*
-	if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
-		gl.generateMipmap(gl.TEXTURE_2D);
-	} else {
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-	}
-	*/
-
 	gl.generateMipmap(gl.TEXTURE_2D);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-	gl.uniform1i(gl.getUniformLocation(program, "texture"), 0);
+	gl.uniform1i(gl.getUniformLocation(program, "cube_texture"), 0);
+
 }
 
 function set_cube_texture(){
@@ -251,8 +203,7 @@ function set_cube_texture(){
 	image.onload = function () {
 		configureTexture(image);
 	}
-	image.src = "mob.bmp";
-
+	image.src = "../textures/mob.bmp";
 
 	var texture_coordinates = [
 		0.33, 0.25,
@@ -291,71 +242,10 @@ function set_cube_texture(){
 	gl.enableVertexAttribArray(texHandler);
 }
 
-function isPowerOf2(value) {
-	return (value & (value - 1)) == 0;
-}
-
-
-function configureCubeMap()
-{
-	// Generate checkerboard texture
-	for (var i = 0; i < texSize; i++) {
-		for (var j = 0; j < texSize; j++) {
-
-			var c = ((((i&0x1)==0)^((j&0x1))==0))*255;
-
-			image1[4*i*texSize+4*j]   = c;
-			image1[4*i*texSize+4*j+1] = c;
-			image1[4*i*texSize+4*j+2] = c;
-			image1[4*i*texSize+4*j+3] = 255;
-
-			image2[4*i*texSize+4*j]   =  c;
-			image2[4*i*texSize+4*j+1] =  c;
-			image2[4*i*texSize+4*j+2] =  0;
-			image2[4*i*texSize+4*j+3] =  255;
-
-			image3[4*i*texSize+4*j]   =  c;
-			image3[4*i*texSize+4*j+1] =  0;
-			image3[4*i*texSize+4*j+2] =  c;
-			image3[4*i*texSize+4*j+3] =  255;
-
-			image4[4*i*texSize+4*j]   =  0;
-			image4[4*i*texSize+4*j+1] =  c;
-			image4[4*i*texSize+4*j+2] =  c;
-			image4[4*i*texSize+4*j+3] =  255;
-
-			image5[4*i*texSize+4*j]   =  255;
-			image5[4*i*texSize+4*j+1] =  c;
-			image5[4*i*texSize+4*j+2] =  c;
-			image5[4*i*texSize+4*j+3] =  255;
-
-			image6[4*i*texSize+4*j]   =  c;
-			image6[4*i*texSize+4*j+1] =  c;
-			image6[4*i*texSize+4*j+2] =  255;
-			image6[4*i*texSize+4*j+3] =  255;
-		}
-	}
-
-
-    cubeMap = gl.createTexture();
-
-	// Bind texture and initialize
-
-
-	// ToDo
-
-
-}
-
 function exercise1() {
-
 	set_cube_uniform_matrix();
 	set_cube_buffers();
 	set_cube_texture();
-
-	const textureCoordBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
-
 	render();
 }
 
@@ -363,37 +253,29 @@ var render = function(){
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	var ext = gl.getExtension('OES_element_index_uint');
 
-	if (exercise_num == 1){
-		// Change Viewpoint
-		xangle += 0.01;
-		yangle += 0.02;
-		delta_translate += 0.05;
-		translation = Math.sin(delta_translate);
-		var model_translate = translate(-translation, 0.0, 0.0);
+	// Change Viewpoint
+	xangle += 0.01;
+	yangle += 0.02;
+	delta_translate += 0.05;
+	translation = Math.sin(delta_translate);
+	var model_translate = translate(-translation, 0.0, 0.0);
 
+	eye[0] = Math.sin(xangle) * Math.cos(yangle);
+	eye[1] = Math.sin(xangle) * Math.sin(yangle);
+	eye[2] = Math.cos(xangle);
 
-		eye[0] = Math.sin(xangle) * Math.cos(yangle);
-		eye[1] = Math.sin(xangle) * Math.sin(yangle);
-		eye[2] = Math.cos(xangle);
+	var viewdir = vec3(at[0] - eye[0], at[1] - eye[1], at[2] - eye[2]);
+	var viewdirLoc = gl.getUniformLocation(program, "viewdir");
+	gl.uniform3fv(viewdirLoc, viewdir);
 
-		var viewdir = vec3(at[0] - eye[0], at[1] - eye[1], at[2] - eye[2]);
-		var viewdirLoc = gl.getUniformLocation(program, "viewdir");
-		gl.uniform3fv(viewdirLoc, viewdir);
+	var modelViewMatrixLoc = gl.getUniformLocation(program, "modelViewMatrix");
+	var modelViewMatrix = lookAt(eye, at, up);
+	var animated_matrix = mult(modelViewMatrix, model_translate);
+	gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(animated_matrix));
 
-		var modelViewMatrixLoc = gl.getUniformLocation(program, "modelViewMatrix");
-		var modelViewMatrix = lookAt(eye, at, up);
-		var temp = mult(modelViewMatrix, model_translate);
-		gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(temp));
+	// Draw triangles
+	gl.drawElements(gl.TRIANGLES, indicies.length, gl.UNSIGNED_INT, 0);
 
-		// Draw triangles
-		gl.drawElements(gl.TRIANGLES, indicies.length, gl.UNSIGNED_INT, 0);
-
-		requestAnimFrame(render);
-	}
-	else if (exercise_num == 2) {
-
-	}
-
-
-
+	requestAnimFrame(render);
 }
+
