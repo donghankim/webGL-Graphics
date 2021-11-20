@@ -195,7 +195,6 @@ function configureTexture(image){
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 	gl.uniform1i(gl.getUniformLocation(program, "cube_texture"), 0);
-
 }
 
 function set_cube_texture(){

@@ -2,7 +2,7 @@
 //   2021 Fall COSE436 interactive Visualization
 //   Instructor: Won-Ki Jeong (wkjeong@korea.ac.kr)
 //
-//   Assignment 2 Texture Mapping
+//   Assignment 2 Texture Mapping - exercise 2
 //
 
 var canvas;
