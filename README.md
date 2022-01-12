@@ -15,14 +15,14 @@ The vertex shader is responsible for transforming the object's vertex to the scr
 The purpose of projection is to transform points defined in 3D space to screen space (2D). There are many different methods of projection, but the two methods defined in this project are the orthogonal and perspective projection. Thankfully, the skeleton code contained a utilities file that has predefined functions for calculating the orthogonal and perspective projection matrices. Since the projection matrix is independent of the model loaded onto the HTML canvas, I set the perspective projection matrix with a fovy of 15, aspect of 1 and -0.5, +0.5 for the near and far planes respectively. The aspect ratio is determined by the size of the canvas, which I modified to have a width of 800px and a height of 800px. For orthogonal projection, I set the left, right, bottom, top to have values ranging from -0.5 to 0.5, while the near and far values were set to 0.5 and 1000 respectively. I should note that the parameters for projection can be changed, if certain objects are not rendered properly. I noticed that although the bunny and dragon files loaded well with the given projection parameter, the fandisk file appeared too large. However, this is not such an issue as users can zoom out of the view if objects appear too large. The figure on the left is an example of perspective transformation, whilst the figure on the right is an example of orthogonal transformation. The example image below highlights the final product of rendering the <b>bunny.off</b> file provided in this repository.
 
 <div align="center">
-<img src="media/bunny_rendering.png" width="500", height="300" >
+<img src="media/bunny_rendering.png" width="400", height="200" >
 </div>
 
 ## Environment Mapping
 The same process is used to load the OFF file, and calculate the required vertex information. Environment mapping is completed using the cube map texture function available in webGL. The cube vertices are placed in an array called “cube_vertex”. This vertex array is used to set the environment map. To confirm the enviornment map was successfully applied, I rendered a sphere that is textured by the reflection of the environment. To achieve this, I had to pass the sphere's vertex normal data to the GPU buffer. Then, in the fragment shadder, the reflected vector (from the vertex normal) was used to collect the RGB color to apply to the sphere vertex. The left image is the environment map applied to the cube, and the image on the right shows the rendered sphere.
 
 <div align="center">
-<img src="media/cube_mapping.png" width="500", height="300" >
+<img src="media/cube_mapping.png" width="400", height="400" >
 </div>
 
 ## MIP & Alpha Blending
@@ -34,7 +34,7 @@ For the transfer function, I had to create a UInt8Array to transfer the data fro
 Using only the voxel data texture, I found the maximum intensity by running a for loop. I realized very quickly that there was no need to find the actual entry and end point in order to calculate the maximum intensity. For every ray casted, the ray travels for 10000 iterations and updates the maximum invesity value accordingly. The ray starting point is determined by the position of the pixel fragment, and the ray direction is a unit vector determined by the eye position (denoted as viewdir in my code) and the ray starting point. The color is then determined entirely by the maximum intensity found. This process is repeated for all pixels in the fragment shader.
 
 <div align="center">
-<img src="media/mip_example.png" width="500", height="300" >
+<img src="media/mip_example.png" width="400", height="400" >
 </div>
 
 
