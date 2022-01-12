@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+<title>Assignment 3</title>
+
+<!-- 2021 Fall COSE436 interactive Visualization
+	 Instructor: Won-Ki Jeong (wkjeong@korea.ac.kr) -->
+
+<script id="vertex-shader" type="x-shader/x-vertex">#version 300 es
+
+in vec3 vPosition;
+in vec3 texCoord;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+out vec3 entry_point;
+
+
+void main() {
+	entry_point = vPosition;
+	gl_Position = projectionMatrix*modelViewMatrix*vec4(vPosition, 1.0);
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">#version 300 es
+
+precision highp float;
+precision highp int;
+precision highp sampler3D;
+
+in vec3 entry_point;
+uniform vec3 viewdir;
+uniform sampler3D vol;
+uniform sampler3D transfer_texture;
+uniform float type;
+out vec4 color;
+
+void main() {
+	vec3 rayPos = entry_point;
+	vec3 rayDir = normalize(entry_point - viewdir);
+	float dt = 0.01f;
+	float maxValue = 0.0f;
+	float limit = 2.0;
+	vec4 new_color = vec4(0.0, 0.0, 0.0, 0.0);
+
+	// MIP
+	if(type == 1.0){
+		for(int i = 0; i <10000; i++){
+			if(rayPos.x > -limit && rayPos.y > -limit && rayPos.z > -limit && rayPos.x < limit && rayPos.y < limit && rayPos.z < limit){
+				float voxel_value = texture(vol, rayPos + vec3(0.5)).r;
+				if(maxValue < voxel_value){
+					maxValue = voxel_value;
+				}
+				rayPos += dt * rayDir;
+			}
+		}
+		color = vec4(vec3(maxValue), 1.0);
+	}
+
+	// alpha composite
+	else if (type == 2.0){
+		for(int i = 0; i<10000; i++){
+			if(rayPos.x>-1.0 && rayPos.y>-1.0 && rayPos.z>-1.0 && rayPos.x<1.0 && rayPos.y<1.0 && rayPos.z<1.0){
+				float voxel_value = texture(vol, rayPos + vec3(0.5)).r;
+				vec4 transfer_value = texture(transfer_texture, vec3(voxel_value, 1.0, 1.0));
+				transfer_value.a = transfer_value.a*transfer_value.a*transfer_value.a*transfer_value.a*transfer_value.a;
+				vec3 rgb = new_color.rgb + (1.0 - new_color.a) * transfer_value.a * transfer_value.rgb;
+				float alpha = new_color.a + (1.0 - color.a) * transfer_value.a;
+				new_color = vec4(rgb, alpha);
+
+				// terminate condition
+				if (new_color.a  > 0.98){
+					break;
+				}
+			}
+			rayPos += dt * rayDir;
+		}
+	color = new_color;
+	}
+}
+</script>
+
+<script type="text/javascript" src="../Common/webgl2-utils.js"></script>
+<script type="text/javascript" src="../Common/initShaders.js"></script>
+<script type="text/javascript" src="../Common/MV.js"></script>
+
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jscolor/2.0.4/jscolor.js"></script>
+<script defer type="text/javascript" src="interface.js"></script>
+<script defer type="text/javascript" src="assign_3.js"></script>
+
+</head>
+
+<body>
+<canvas id="gl-canvas" width="512" height="512" style="border:3px solid #FF0000;">
+Oops ... your browser doesn't support the HTML5 canvas element
+</canvas>
+
+<br>
+<input type="file" name="inputfile" id="inputfile">
+<br>
+<pre id="output"></pre>
+<button onclick="set_mip()">MIP</button>
+<button onclick="set_alphaComp()">Alpha Composite</button>
+<br>
+
+<svg id = "main_svg" width="500" height="350" style="position: absolute;"></svg>
+<canvas id="cv" width="430" height="50" style="top: 350px; left: 50px; position: relative;"></canvas>
+<input id = "colorpicker" type = "color" value="#ffffff" onchange="changecolor(this)" style="left: 500px; position: absolute;">
+
+</body>
+</html>
